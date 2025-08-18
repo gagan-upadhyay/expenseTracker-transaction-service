@@ -1,4 +1,4 @@
-import { faker } from "@faker-js/faker";
+// import { faker } from "@faker-js/faker";
 import { db, pool } from "../../config/db.js";
 import { findByUserId, insert } from "../models/Transactions.js";
 import { logger } from "../../config/logger.js";
