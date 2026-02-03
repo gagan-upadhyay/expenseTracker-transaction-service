@@ -49,24 +49,25 @@ app.use((err, req, res, next)=>{
 });
 
 app.get('/', (req, res)=>{
-    logger.info("Welcome route of transaction-service hit!");
-    return res.status(200).send("Welcome to the transaction-service");
+    return res.status(200).json({message:"Welcome to the transaction-service"});
 })
 
 // app routes
 
 app.use('/api/v1/transactions', transactionRouter);
 
+if(process.env.NODE_ENV!=='test'){
+    const server = app.listen(process.env.PORT, ()=>{
+        console.log(`Transaction-service is running at port ${process.env.PORT}`);
+        logger.info(`Transaction-service is running at port ${process.env.PORT}`);
+    });
+
+    setupGracefulShutDown(server, [
+        async()=>await pool.end(),
+        async()=> await knexDB.destroy()
+    ])
+}
 
 
 
-const server = app.listen(process.env.PORT, ()=>{
-    console.log(`Transaction-service is running at port ${process.env.PORT}`);
-    logger.info(`Transaction-service is running at port ${process.env.PORT}`);
-});
-
-setupGracefulShutDown(server, [
-    async()=>await pool.end(),
-    async()=> await knexDB.destroy()
-])
-
+export default app;
