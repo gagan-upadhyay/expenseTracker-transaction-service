@@ -16,13 +16,13 @@ export async function insert(transaction){
     return rows[0];
 }
 
-export async function findByUserId(user_id, page=1, limit=20){
+export async function findByUserId(user_id, page, limit, accountId, from, to, type, category){
     const offset = (page-1)*limit;
     const query = `
         SELECT t.* FROM transactions t
-        JOIN account a ON t.account_id=a.id
+        JOIN accounts a ON t.account_id=a.id
         WHERE a.user_id=$1
-        ORDER_BYt.timestamp DESC
+        ORDER BY t.occurred_at DESC
         LIMIT $2 OFFSET $3
     `
     const values = [

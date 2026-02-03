@@ -14,6 +14,7 @@ export const verifySession = async(req, res, next)=>{
             return res.status(401).json({message:'Invalid or expired token'})
         }
         req.user=decoded;
+        console.log('Value of req.user:', req.user);
         next();
     }catch(err){
         res.status(401).json({message:'Unauthorized!'});

@@ -6,3 +6,4 @@ export const pool = new Pool({
 });
 
 export const db = (text, params)=>pool.query(text, params);
+

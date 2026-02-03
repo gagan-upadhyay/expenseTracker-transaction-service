@@ -1,13 +1,34 @@
 import express from 'express';
-import { getTransactions, syncBank } from '../controllers/transactionController.js';
+import { addTransactionController, getTransactions, updateTransactionController } from '../controllers/transactionController.js';
 import { verifySession } from '../../middleware/verifySession.js';
 
 
 
 const transactionRouter = express.Router();
 
+//base: /api/v1/transactions
+
 transactionRouter.get('/', verifySession,getTransactions);
-transactionRouter.post('/sync-bank', verifySession,syncBank);
+// transactionRouter.post('/sync-bank', verifySession,syncBank);
+transactionRouter.post('/', verifySession, addTransactionController);
+transactionRouter.get('/:transactionId', verifySession);
+transactionRouter.patch('/:transactinoId', verifySession, updateTransactionController);
+
+// suggestions:
+// GET    /transactions with filters: ?accountId=&from=&to=&type=&categoryId=&limit=&cursor=
+// POST   /transactions (create)
+// GET    /transactions/:transactionId
+// PATCH  /transactions/:transactionId (partial updates; was /update-transaction)
+// DELETE /transactions/:transactionId
+// (Optional) Nested routes if you prefer explicit scoping:
+
+// GET/POST /accounts/:accountId/transactions
+
+
+// (Optional) Reporting:
+
+// GET /transactions/summary?groupBy=category&period=month
+
 // transactionRouter.get('/createTable', createTranstable);
 
 export default transactionRouter;
