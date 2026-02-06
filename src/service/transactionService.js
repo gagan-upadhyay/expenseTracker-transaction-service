@@ -18,6 +18,7 @@ export async function knexSelect(userId){
     .join('transaction_categories', 'transactions.category_id', '=', 'transaction_categories.category_id')
     .join('accounts', 'transactions.account_id', '=', 'accounts.id')
     .where('transactions.user_id', userId)
+    .andWhere('transactions.is_active', true)
     .select('transactions.*', 'transaction_categories.display_name', 'accounts.currency_code')
 }
 
@@ -36,6 +37,7 @@ export async function getchOneTransactionService(accountId, userId, transactionI
     .where('t.user_id', userId)
     .andWhere('t.account_id', accountId)
     .andWhere('t.id', transactionId)
+    .andWhere('t.is_active', true)
     .orderBy([{column:'t.occurred_at', order:'desc'}, {column:'t.id', order:'desc'}]);
 }
 

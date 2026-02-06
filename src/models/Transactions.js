@@ -21,7 +21,7 @@ export async function findByUserId(user_id, page, limit, accountId, from, to, ty
     const query = `
         SELECT t.* FROM transactions t
         JOIN accounts a ON t.account_id=a.id
-        WHERE a.user_id=$1
+        WHERE a.user_id=$1 AND t.is_active=TRUE
         ORDER BY t.occurred_at DESC
         LIMIT $2 OFFSET $3
     `
