@@ -1,5 +1,5 @@
 import express from 'express';
-import { addTransactionController, getTransactions, updateTransactionController } from '../controllers/transactionController.js';
+import { addTransactionController, deleteTransactionController, fetchOnetransactionController, getTransactions, updateTransactionController } from '../controllers/transactionController.js';
 import { verifySession } from '../../middleware/verifySession.js';
 
 
@@ -9,11 +9,13 @@ const transactionRouter = express.Router();
 //base: /api/v1/transactions
 
 transactionRouter.get('/', verifySession,getTransactions);
-// transactionRouter.post('/sync-bank', verifySession,syncBank);
-transactionRouter.post('/', verifySession, addTransactionController);
-transactionRouter.get('/:transactionId', verifySession);
-transactionRouter.patch('/:transactinoId', verifySession, updateTransactionController);
 
+transactionRouter.post('/', verifySession, addTransactionController);
+transactionRouter.get('/:transactionId', verifySession, fetchOnetransactionController);
+transactionRouter.patch('/:transactionId', verifySession, updateTransactionController);
+transactionRouter.delete('/:transactionId', verifySession, deleteTransactionController);
+
+// transactionRouter.post('/sync-bank', verifySession,syncBank);
 // suggestions:
 // GET    /transactions with filters: ?accountId=&from=&to=&type=&categoryId=&limit=&cursor=
 // POST   /transactions (create)

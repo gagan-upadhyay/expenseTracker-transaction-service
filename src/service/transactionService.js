@@ -21,24 +21,43 @@ export async function knexSelect(userId){
     .select('transactions.*', 'transaction_categories.display_name', 'accounts.currency_code')
 }
 
+export async function getchOneTransactionService(accountId, userId, transactionId) {
+    return knexDB({t:'transactions'})
+    .leftJoin({c:'transaction_categories'}, 'c.category_id', 't.category_id')
+    .select(
+        't.amount',
+        't.type',
+        {cat_display_name:'c.display_name'},
+        't.description',
+        't.reference',
+        't.occurred_at',
+        't.category_id'
+    )
+    .where('t.user_id', userId)
+    .andWhere('t.account_id', accountId)
+    .andWhere('t.id', transactionId)
+    .orderBy([{column:'t.occurred_at', order:'desc'}, {column:'t.id', order:'desc'}]);
+}
+
+
 //generate synthetic transaction for all user accounts
 
 
-export async function generateTransactions(userId, count=10){
-    const accountQuery=`
-    SELECT id FROM accounts WHERE user_id=$1
-    `;
-    const {rows:accounts} = await db(accountQuery, [userId]);
-    const inserted=[];
-    for(const account of accounts){
-        for(let i=0;i<count;i++){
-            const tx = generateFakeTransactions(account.id);
-            const result = await insert(tx);
-            inserted.push(result);
-        }
-    }
-    return inserted;
-}
+// export async function generateTransactions(userId, count=10){
+//     const accountQuery=`
+//     SELECT id FROM accounts WHERE user_id=$1
+//     `;
+//     const {rows:accounts} = await db(accountQuery, [userId]);
+//     const inserted=[];
+//     for(const account of accounts){
+//         for(let i=0;i<count;i++){
+//             const tx = generateFakeTransactions(account.id);
+//             const result = await insert(tx);
+//             inserted.push(result);
+//         }
+//     }
+//     return inserted;
+// }
 
 // creating transaction table:
 export async function createTable() {

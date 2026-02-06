@@ -1,5 +1,10 @@
 import { logger } from "../../config/logger.js";
-import { checkCategoryTableAndAddTransaction, generateTransactions, getTransactionsByUser, knexSelect } from "../service/transactionService.js";
+import { 
+    checkCategoryTableAndAddTransaction,
+    // generateTransactions, 
+    getchOneTransactionService, 
+    getTransactionsByUser, 
+    knexSelect } from "../service/transactionService.js";
 
 export async function getTransactions(req, res) {
     try{
@@ -35,7 +40,8 @@ export async function getTransactions(req, res) {
 export async function addTransactionController(req, res){
     try{
         const userId = req.user.id;
-        const {accountId, amount, type, description, reference, CategoryCode, displayName, occurredAt} = req.body;
+        const {accountId} = req.query;
+        const { amount, type, description, reference, CategoryCode, displayName, occurredAt} = req.body;
         //note: Date order is yyyy-mm-dd
 
         console.log('Value of accountId, amount, type, description, reference, occuredAt, CategoryCode, displayName:\n', accountId, amount, type, description, reference, CategoryCode, displayName);
@@ -60,5 +66,30 @@ export async function updateTransactionController(req, res){
     }catch(err){
         console.error('Error while updating transaction:', err)
         return res.status(500).json({error:'Failed to edit transactions'});
+    }
+}
+
+export async function fetchOnetransactionController(req, res){
+    const{accountId, transactionId} = req.query;
+    const userId = req.user.id;
+    // const {transactionId} = req.params;
+    console.log('value of req.query:', req.query);
+    try{
+        const result = await getchOneTransactionService(accountId, userId, transactionId);
+        if(result.length===0) return res.status(200).json({success:true, message:'No Transaction recorded.'})
+        console.log('Value of result from controller:', result);
+        return res.status(200).json({success:true, message:'Fetched sucessfully', result});
+    }catch(err){
+        logger.error(`Error while fethcing transactionId:${transactionId}, Error: ${err}`);
+        return res.status(500).json({success:false, message:'Something went wrong, please try again later'});
+    }
+}
+
+export async function deleteTransactionController(req, res){
+    try{
+
+    }catch(err){
+        logger.error('Error while deleting transaction:', err);
+        return res.status(500).json({success:false, message:'Something went wrong! Please try again later'});
     }
 }
