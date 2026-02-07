@@ -4,7 +4,7 @@ import { redisClient } from '../utils/redisConnection.js';
 export const verifySession = async(req, res, next)=>{
     try{
         console.log("From verify session");
-        const token = req.cookies.accessToken;
+        const token = req.cookies.accessToken || req.headers.authorization?.split(' ')[1] || req.cookies?.accesstoken;
         console.log("Value of tokemn from verifySession:", token);
         if(!token) return res.status(401).json({message:'Token missing'});
         const decoded = jwt.verify(token, process.env.SECRET);

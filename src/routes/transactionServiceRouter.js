@@ -8,7 +8,7 @@ const transactionRouter = express.Router();
 
 //base: /api/v1/transactions
 
-transactionRouter.get('/', verifySession,getTransactions);
+transactionRouter.get('/', verifySession, getTransactions);
 
 transactionRouter.post('/', verifySession, addTransactionController);
 transactionRouter.get('/:transactionId', verifySession, fetchOnetransactionController);
