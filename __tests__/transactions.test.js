@@ -67,9 +67,9 @@ jest.unstable_mockModule("../config/logger.js", () => ({
 }));
 
 // Mock graceful shutdown
-jest.unstable_mockModule("../utils/setupGracefulShutDown.js", () => ({
-  default: jest.fn()
-}));
+// jest.unstable_mockModule("../utils/setupGracefulShutDown.js", () => ({
+//   default: jest.fn()
+// }));
 
 // Mock compression, cookie-parser, morgan
 jest.unstable_mockModule("compression", () => ({
