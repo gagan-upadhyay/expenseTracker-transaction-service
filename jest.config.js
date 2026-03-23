@@ -1,14 +1,9 @@
 export default {
-  testEnvironment: 'node',
+  testEnvironment: "node",
   transform: {},
-  collectCoverageFrom: [
-    'src/**/*.js',
-    '!src/**/*.test.js',
-    '!node_modules/**',
-  ],
-  testMatch: ['**/__tests__/**/*.test.js'],
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-  forceExit: true,
-  detectOpenHandles: true,
-  testTimeout: 10000,
+  setupFilesAfterEnv: ["./jest.setup.js"],
+  globalTeardown: "./jest.teardown.js",
+  moduleNameMapper: {
+    "^(\\.{1,2}/.*)\\.js$": "$1"  // Fix ESM imports
+  }
 };

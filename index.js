@@ -9,6 +9,7 @@ import { logger } from './config/logger.js';
 import setupGracefulShutDown from './utils/setupGracefulShutdown.js';
 import { pool } from './config/db.js';
 import { knexDB } from './config/knex.js';
+import { helmetConfig } from './config/helmet.config.js';
 
 const app = express();
 const corsOptions={
@@ -34,6 +35,7 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(compression());
 app.use(cookieParser());
+app.use(helmetConfig);
 
 if(process.env.NODE_ENV==='development'){
     app.use(morgan('dev'));
@@ -56,18 +58,15 @@ app.get('/', (req, res)=>{
 
 app.use('/api/v1/transactions', transactionRouter);
 
-if(process.env.NODE_ENV!=='test'){
-    const server = app.listen(process.env.PORT, ()=>{
-        console.log(`Transaction-service is running at port ${process.env.PORT}`);
-        logger.info(`Transaction-service is running at port ${process.env.PORT}`);
+let server = null 
+if(process.env.NODE_ENV!=="test"){
+     server = app.listen(process.env.PORT || 5002, "0.0.0.0", () => {
+        logger.info(`Auth service running on ${process.env.PORT}`);
     });
 
     setupGracefulShutDown(server, [
-        async()=>await pool.end(),
-        async()=> await knexDB.destroy()
-    ])
+        async()=>await getRedisClient.disconnect(),
+        async()=>await pool.end()
+    ]);
 }
-
-
-
-export default app;
+export {app, server};
