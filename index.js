@@ -61,7 +61,7 @@ app.use('/api/v1/transactions', transactionRouter);
 let server = null 
 if(process.env.NODE_ENV!=="test"){
      server = app.listen(process.env.PORT || 5002, "0.0.0.0", () => {
-        logger.info(`Auth service running on ${process.env.PORT}`);
+        logger.info(`Transaction service running on ${process.env.PORT}`);
     });
 
     setupGracefulShutDown(server, [

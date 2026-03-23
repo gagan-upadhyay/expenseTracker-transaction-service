@@ -43,11 +43,11 @@ if (process.env.NODE_ENV === "test") {
 } else {
   // real redis
   redisClient = createClient({
-    username: 'default',
-    password: 'Zs4NBtHYoJvvK8zf9WKOWzg2ShIzvMSB',
-    socket: {
-      host: 'redis-17239.c99.us-east-1-4.ec2.cloud.redislabs.com',
-      port: 17239
+    username:process.env.REDIS_USERNAME,
+    password:process.env.REDIS_PASSWORD,
+    socket:{
+      host:process.env.REDIS_HOST,
+      port:process.env.REDIS_PORT,
     }
   });
 }
