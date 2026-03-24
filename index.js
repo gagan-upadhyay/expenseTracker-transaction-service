@@ -13,7 +13,7 @@ import { helmetConfig } from './config/helmet.config.js';
 
 const app = express();
 const corsOptions={
-    origin:['http://192.168.0.126:3000','http://localhost:3000', 'https://expense-tracker-self-rho-12.vercel.app/', 'http://192.168.0.126:3000'],
+    origin:['http://192.168.0.126:3000','http://localhost:3000', 'https://expense-tracker-git-newbranch-gagans-projects-00cb1a77.vercel.app'],
     credentials:true,
 };
 // const corsOptions = {
