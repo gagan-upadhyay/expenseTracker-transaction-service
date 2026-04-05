@@ -62,25 +62,11 @@ jobs:
           docker push ${{ secrets.DOCKER_USERNAME }}/transaction-service:latest
 
       # =========================
-      # 8. Deploy (IMPORTANT)
+      # 8. Trigger Deploy Repo 
       # =========================
-      - name: Deploy to Azure VM
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          script: |
-            cd /home/azureuser/expense-tracker
-            
-            echo "🚀 Pull latest images"
-            docker compose pull
-
-            echo "🧹 Remove orphan containers"
-            docker compose down --remove-orphans
-
-            echo "🚀 Start fresh containers"
-            docker compose up -d
-
-            echo "🧼 Cleanup old images"
-            docker image prune -af
+      - name: Trigger Deployment
+        run: |
+          curl -X POST https://api.github.com/repos/gagan-upadhyay/expense-tracker-deploy/dispatches \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: token ${{ secrets.DEPLOY_REPO_TOKEN }}" \
+          -d '{"event_type":"deploy"}'
