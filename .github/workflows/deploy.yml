@@ -72,12 +72,15 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             cd /home/azureuser/expense-tracker
+            
+            echo "🚀 Pull latest images"
+            docker compose pull
 
-            # Pull latest images
-            docker compose pull transaction-service
+            echo "🧹 Remove orphan containers"
+            docker compose down --remove-orphans
 
-            # Restart ONLY this service (zero downtime for others)
-            docker compose up -d --no-deps transaction-service
+            echo "🚀 Start fresh containers"
+            docker compose up -d
 
-            # Cleanup old images
-            docker image prune -f
+            echo "🧼 Cleanup old images"
+            docker image prune -af
