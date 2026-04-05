@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  auth-service:
+    image: awsgaga/auth-service:latest
+    container_name: auth-service
+    restart: always
+    ports:
+      - "127.0.0.1:5000:5000"
+    env_file:
+      - ./env/auth.env
+
+  user-service:
+    image: awsgaga/user-service:latest
+    container_name: user-service
+    restart: always
+    ports:
+      - "127.0.0.1:5001:5001"
+    env_file:
+      - ./env/user.env
+
+  transaction-service:
+    image: awsgaga/transaction-service:latest
+    container_name: transaction-service
+    restart: always
+    ports:
+      - "127.0.0.1:5002:5002"
+    env_file:
+      - ./env/transaction.env
+
+  account-service:
+    image: awsgaga/account-service:latest
+    container_name: account-service
+    restart: always
+    ports:
+      - "127.0.0.1:5003:5003"
+    env_file:
+      - ./env/account.env
+
+networks:
+  default:
+    name: expense-tracker-network

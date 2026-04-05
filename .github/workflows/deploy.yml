@@ -1,53 +1,83 @@
-name: CI/CD Pipeline transaction-Service
+name: CI/CD - transaction Service
+
 on:
-    push:
-        branches: ["main"]
+  push:
+    branches: ["main"]
+
 jobs:
-    build-test-deploy:
-        runs-on: ubuntu-latest
+  build-and-deploy:
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout Code
-              uses: actions/checkout@v3
+    steps:
+      # =========================
+      # 1. Checkout
+      # =========================
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v3
-              with:
-                node-version: '18'
-            
-            - name: Cache npm
-              uses: actions/cache@v3
-              with:
-                path: ~/.npm
-                key: ${{runner.os}}-node-${{hashFiles('package-lock.json')}}
+      # =========================
+      # 2. Setup Node
+      # =========================
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
 
+      # =========================
+      # 3. Cache npm
+      # =========================
+      - name: Cache npm
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
 
-            - name: Install Dependencies
-              run: npm install
+      # =========================
+      # 4. Install + Test
+      # =========================
+      - name: Install Dependencies
+        run: npm install
 
-            - name: Run Tests
-              run: npm test
-            
-            
-            - name: Build Docker Image
-              run: docker build --pull -t ${{secrets.DOCKER_USERNAME}}/transaction-service:latest .
+      - name: Run Tests
+        run: npm test
 
-            - name: Login to DockerHub
-              run: echo "${{secrets.DOCKER_PASSWORD}}" | docker login -u "${{secrets.DOCKER_USERNAME}}" --password-stdin
-            
-            - name: Push Image
-              run: docker push ${{secrets.DOCKER_USERNAME}}/transaction-service:latest
+      # =========================
+      # 5. Build Docker Image
+      # =========================
+      - name: Build Docker Image
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/transaction-service:latest .
 
-            - name: Deploy to Azure VM
-              uses: appleboy/ssh-action@v0.1.6
-              with:
-                host: ${{secrets.SERVER_HOST}}
-                username: ${{secrets.SERVER_USER}}
-                key: ${{secrets.SERVER_SSH_KEY}}
-                script: |
-                 docker pull ${{secrets.DOCKER_USERNAME}}/transaction-service:latest
-                 docker stop transaction-service || true
-                 docker rm transaction-service || true
-                 docker run -d --env-file /home/azureuser/transaction.env -p 5002:5002 --restart unless-stopped --name transaction-service ${{secrets.DOCKER_USERNAME}}/transaction-service:latest
+      # =========================
+      # 6. Login DockerHub
+      # =========================
+      - name: Login to DockerHub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
+      # =========================
+      # 7. Push Image
+      # =========================
+      - name: Push Docker Image
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/transaction-service:latest
 
+      # =========================
+      # 8. Deploy (IMPORTANT)
+      # =========================
+      - name: Deploy to Azure VM
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            cd /home/azureuser/expense-tracker
+
+            # Pull latest images
+            docker-compose pull transaction-service
+
+            # Restart ONLY this service (zero downtime for others)
+            docker-compose up -d --no-deps transaction-service
+
+            # Cleanup old images
+            docker image prune -f
