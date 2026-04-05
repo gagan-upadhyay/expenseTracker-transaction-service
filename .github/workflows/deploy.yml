@@ -74,10 +74,10 @@ jobs:
             cd /home/azureuser/expense-tracker
 
             # Pull latest images
-            docker-compose pull transaction-service
+            docker compose pull transaction-service
 
             # Restart ONLY this service (zero downtime for others)
-            docker-compose up -d --no-deps transaction-service
+            docker compose up -d --no-deps transaction-service
 
             # Cleanup old images
             docker image prune -f
