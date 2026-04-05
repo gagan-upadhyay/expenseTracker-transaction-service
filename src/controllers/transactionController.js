@@ -41,12 +41,12 @@ export async function addTransactionController(req, res){
     try{
         const userId = req.user.id;
         const {accountId} = req.query;
-        const { amount, type, description, reference, CategoryCode, displayName, occurredAt} = req.body;
-        //note: Date order is yyyy-mm-dd
+        const { amount, type, description, reference, categorycode, displayname, occurredat} = req.body;
+        //note: Date order is yyyy-mm-dd in db
 
-        console.log('Value of accountId, amount, type, description, reference, occuredAt, CategoryCode, displayName:\n', accountId, amount, type, description, reference, CategoryCode, displayName);
+        console.log('Value of accountId, amount, type, description, reference, occuredat, categorycode, displayName:\n', accountId, amount, type, description, reference, categorycode, displayname);
 
-        const saveTransaction = await checkCategoryTableAndAddTransaction( userId, type, displayName, amount, accountId, description, reference,  CategoryCode, occurredAt);
+        const saveTransaction = await checkCategoryTableAndAddTransaction( userId, type, displayname, amount, accountId, description, reference,  categorycode, occurredat);
         console.log('Value of saveTransaction from controller:\n', saveTransaction);      
         
         return res.status(201).json({message:"Transaction saved successfully", saveTransaction});
