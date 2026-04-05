@@ -10,6 +10,7 @@ import setupGracefulShutDown from './utils/setupGracefulShutdown.js';
 import { pool } from './config/db.js';
 import { knexDB } from './config/knex.js';
 import { helmetConfig } from './config/helmet.config.js';
+import { setupHealthCheckUp } from './utils/setupHealthCheckup.js';
 
 const app = express();
 const corsOptions={
@@ -31,6 +32,10 @@ app.use(helmetConfig);
 if(process.env.NODE_ENV==='development'){
     app.use(morgan('dev'));
 }
+
+// healthcheckup
+setupHealthCheckUp(app);
+
 
 //midddleware
 //application level error catcher:
