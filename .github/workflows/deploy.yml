@@ -68,5 +68,5 @@ jobs:
         run: |
           curl -X POST https://api.github.com/repos/gagan-upadhyay/expense-tracker-deploy/dispatches \
           -H "Accept: application/vnd.github+json" \
-          -H "Authorization: token ${{ secrets.DEPLOY_REPO_TOKEN }}" \
-          -d '{"event_type":"deploy"}'
+          -H "Authorization: Bearer ${{ secrets.DEPLOY_REPO_TOKEN }}" \
+          -d '{"event_type":"deploy", "client_payload":{"service":"account-service"}}'
