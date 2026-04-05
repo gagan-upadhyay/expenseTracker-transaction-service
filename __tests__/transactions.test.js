@@ -19,7 +19,11 @@ jest.unstable_mockModule("../middleware/verifySession.js", () => ({
 jest.unstable_mockModule("../config/db.js", () => ({
   db: jest.fn(async () => ({ rows: [] })),
   pgQuery: jest.fn(async () => ({ rows: [] })),
-  pool: { end: jest.fn() }
+  pool: { end: jest.fn() },
+  pgConnectTest: jest.fn(async ()=>{
+    console.log("mocked DB connection success");
+    return true;
+  })
 }));
 
 // Mock Redis
@@ -103,6 +107,7 @@ jest.unstable_mockModule("../src/service/transactionService.js", () => ({
 // =======================
 const { app } = await import("../index.js");
 import request from "supertest";
+import { pgConnectTest } from "../config/db.js";
 
 // =======================
 // 3. TEST SUITE

@@ -1,6 +1,6 @@
 import { pgConnectTest } from '../config/db.js';
+
 import { logger } from '../config/logger.js';
-// import { logger } from '../config/logger.js';
 import {app} from '../index.js'
 import { getRedisClient } from './redisConnection.js';
 
