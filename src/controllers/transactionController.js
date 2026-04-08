@@ -6,7 +6,18 @@ import {
     getTransactionsByUser, 
     knexSelect } from "../service/transactionService.js";
 
+export const getLogContext =(req, context)=> ({
+    context: context, 
+    route:req.OriginalUrl,
+    method:req.method,
+    status:req.statusCode,
+    userId: req.user?.id, 
+    accountId: req.params.id, 
+    requestId: req.headers['x-request-id']
+});
+
 export async function getTransactions(req, res) {
+    const logDetails = getLogContext(req, "transactionService:getTransactions")
     try{
         // with filters: ?accountId=&from=&to=&type=&categoryId=&limit=&cursor=
         const userId=req.user.id;
@@ -16,8 +27,10 @@ export async function getTransactions(req, res) {
 
         const knexResult = await knexSelect(userId);
         console.log('Value of knexResult from controller:\n', knexResult);
+        logger.info("Seccessfully fetched transactions", logDetails);
         return res.status(200).json(knexResult);
     }catch(err){
+        logger.error('Critical error in getTransaction', {...logDetails, error:err.message, stack:err.stack});
         console.error('Error fetching transactions:', err);
         return res.status(500).json({error:'Failed to fetch transactions'});
     }
@@ -38,6 +51,7 @@ export async function getTransactions(req, res) {
 // }
 
 export async function addTransactionController(req, res){
+    const logDetails = getLogContext(req, "AuthService:addTransaction");
     try{
         const userId = req.user.id;
         const {accountId} = req.query;
@@ -48,12 +62,13 @@ export async function addTransactionController(req, res){
 
         const saveTransaction = await checkCategoryTableAndAddTransaction( userId, type, displayname, amount, accountId, description, reference,  categorycode, occurredat);
         console.log('Value of saveTransaction from controller:\n', saveTransaction);      
-        
+        logger.info('Transaction added successfully', logDetails);
         return res.status(201).json({message:"Transaction saved successfully", saveTransaction});
         
     }catch(err){
         // console.error('Error syncing bank:', err);
-        console.error('Error while adding transactions:', err)
+        // console.error('Error while adding transactions:', err)
+        logger.error("Critical error: addTransaction",{...logDetails, error:err.message, stack:err.stack});
         return res.status(500).json({error:'Failed to add transactions'});
     }
 }
@@ -61,7 +76,7 @@ export async function addTransactionController(req, res){
 export async function updateTransactionController(req, res){
     try{
         const userId = req.user.id;
-        // const 
+        
 
     }catch(err){
         console.error('Error while updating transaction:', err)
@@ -70,6 +85,7 @@ export async function updateTransactionController(req, res){
 }
 
 export async function fetchOnetransactionController(req, res){
+    const logDetails = getLogContext(req, "AuthService:getOneTransaction");
     const{accountId, transactionId} = req.query;
     const userId = req.user.id;
     // const {transactionId} = req.params;
@@ -78,18 +94,21 @@ export async function fetchOnetransactionController(req, res){
         const result = await getchOneTransactionService(accountId, userId, transactionId);
         if(result.length===0) return res.status(200).json({success:true, message:'No Transaction recorded.'})
         console.log('Value of result from controller:', result);
+        logger.info("Fetched Transaction successfully", logDetails);
         return res.status(200).json({success:true, message:'Fetched sucessfully', result});
     }catch(err){
-        logger.error(`Error while fethcing transactionId:${transactionId}, Error: ${err}`);
+        logger.error(`Error while fethcing transactionId:${transactionId}`, {...logDetails, error:err.message, stack:err.stack});
         return res.status(500).json({success:false, message:'Something went wrong, please try again later'});
     }
 }
 
 export async function deleteTransactionController(req, res){
+    const logDetails = getLogContext(req, "AuthService:DeleteTransaction");
     try{
 
+
     }catch(err){
-        logger.error('Error while deleting transaction:', err);
+        logger.error('ErrCritical error while deleting transaction:', {...logDetails, error:err.message, stack:err.stack});
         return res.status(500).json({success:false, message:'Something went wrong! Please try again later'});
     }
 }

@@ -2,7 +2,7 @@ import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import express from 'express';
 import '@dotenvx/dotenvx/config';
-// import cors from 'cors';
+import cors from 'cors';
 import morgan from 'morgan';
 import transactionRouter from './src/routes/transactionServiceRouter.js';
 import { logger } from './config/logger.js';
@@ -13,25 +13,38 @@ import { helmetConfig } from './config/helmet.config.js';
 import { setupHealthCheckUp } from './utils/setupHealthCheckup.js';
 
 const app = express();
-// const corsOptions={
-//     origin:[
-//         'http://192.168.0.126:3000',
-//         'http://localhost:3000', 
-//         'https://expense-tracker-git-newbranch-gagans-projects-00cb1a77.vercel.app',
-//         'https://expense-tracker-self-rho-12.vercel.app',
-//         'https://expense-tracker-gagans-projects-00cb1a77.vercel.app'],
-//     credentials:true,
-// };
+const corsOptions={
+    origin:[
+        'http://192.168.0.126:3000',
+        'http://localhost:3000', 
+        'https://expense-tracker-git-newbranch-gagans-projects-00cb1a77.vercel.app',
+        'https://expense-tracker-self-rho-12.vercel.app',
+        'https://expense-tracker-gagans-projects-00cb1a77.vercel.app'],
+    credentials:true,
+};
 
-// app.use(cors(corsOptions));
+// if(process.env.NODE_ENV==='development') app.use(cors(corsOptions));
 app.use(express.json());
 app.use(compression());
 app.use(cookieParser());
 app.use(helmetConfig);
 
+// if(process.env.NODE_ENV==='development'){
+//     app.use(morgan('dev'));
+// }
+
+const morganFormat = process.env.NODE_ENV==='production'?'combined':'dev';
+
 if(process.env.NODE_ENV==='development'){
-    app.use(morgan('dev'));
+    app.use(cors(corsOptions))
+}else{
 }
+
+app.use(morgan(morganFormat,{
+    stream:{
+        write:(message)=>logger.info(message.trim(), {context:'HTTP'})
+    }
+}));
 
 // healthcheckup
 setupHealthCheckUp(app);
