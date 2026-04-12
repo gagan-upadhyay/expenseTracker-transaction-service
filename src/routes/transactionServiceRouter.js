@@ -1,5 +1,5 @@
 import express from 'express';
-import { addTransactionController, deleteTransactionController, fetchOnetransactionController, getTransactions, updateTransactionController } from '../controllers/transactionController.js';
+import { addTransactionController, deleteTransactionController, fetchOnetransactionController, GenerateUploadURL, getSpendingBreakdown, getTransactions, updateTransactionController } from '../controllers/transactionController.js';
 import { verifySession } from '../../middleware/verifySession.js';
 
 
@@ -14,6 +14,9 @@ transactionRouter.post('/', verifySession, addTransactionController);
 transactionRouter.get('/:transactionId', verifySession, fetchOnetransactionController);
 transactionRouter.patch('/:transactionId', verifySession, updateTransactionController);
 transactionRouter.delete('/:transactionId', verifySession, deleteTransactionController);
+transactionRouter.post('/generate-upload-url', verifySession, GenerateUploadURL);
+
+transactionRouter.get('/stats/breakdown', verifySession, getSpendingBreakdown);
 
 // transactionRouter.post('/sync-bank', verifySession,syncBank);
 // suggestions:

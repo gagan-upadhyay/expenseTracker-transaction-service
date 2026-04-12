@@ -16,6 +16,7 @@
     "start": "node index.js"
   },
   "dependencies": {
+    "@azure/storage-blob": "^12.31.0",
     "@dotenvx/dotenvx": "^1.48.4",
     "@faker-js/faker": "^9.9.0",
     "compression": "^1.8.1",
