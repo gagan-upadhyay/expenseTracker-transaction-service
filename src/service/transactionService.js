@@ -58,27 +58,6 @@ export async function getTransactionsByUser(userId, page, limit, accountId, from
         
         return finalQuery;
     }
-
-
-
-// export async function getchOneTransactionService(accountId, userId, transactionId) {
-//     return knexDB({t:'transactions'})
-//     .leftJoin({c:'transaction_categories'}, 'c.category_id', 't.category_id')
-//     .select(
-//         't.amount',
-//         't.type',
-//         {cat_display_name:'c.display_name'},
-//         't.description',
-//         't.reference',
-//         't.occurred_at',
-//         't.category_id'
-//     )
-//     .where('t.user_id', userId)
-//     .andWhere('t.account_id', accountId)
-//     .andWhere('t.id', transactionId)
-//     .andWhere('t.is_active', true)
-//     .orderBy([{column:'t.occurred_at', order:'desc'}, {column:'t.id', order:'desc'}]);
-// }
 export async function getchOneTransactionService(accountId, userId, transactionId) {
     return knexDB
         .from({ t: 'transactions' })

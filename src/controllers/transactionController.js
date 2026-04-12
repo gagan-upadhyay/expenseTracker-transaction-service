@@ -4,7 +4,7 @@ import {
     checkCategoryTableAndAddTransaction,
     deleteTransactionService,
     getchOneTransactionService, 
-    getTransactionsByUser, 
+    // getTransactionsByUser, 
     knexSelect, 
     updateTransactionService} from "../service/transactionService.js";
 
@@ -268,53 +268,6 @@ export async function deleteTransactionController(req, res) {
         return res.status(500).json({ success: false, message: 'Something went wrong!' });
     }
 }
-
-// transactionController.js
-// export async function updateTransactionController(req, res) {
-//     const logDetails = getLogContext(req, "TransactionService:UpdateTransaction");
-//     try {
-//         const { transactionId } = req.params;
-//         const { userId, accountId, ...updateData } = req.body;
-//         console.log('Value of updateData:', updateData);
-//         const existing = await getchOneTransactionService(accountId, userId, transactionId);
-        
-//         if (!existing) {
-//             logger.warn("Transaction not found", {...logDetails, transactionId:transactionId});
-//             return res.status(404).json({ success: false, error: "Not found" });
-//         }
-//         const dbUpdate = await updateTransactionService(accountId, userId, transactionId, updateData);
-
-//         if(dbUpdate){
-//             let azureDeleted = true;
-//              if (updateData.reference === null && existing.reference) {
-//                 console.log('Inside dbupdate');
-//                 azureDeleted = await deleteFromAzure(existing.reference);
-//             }
-
-//             if (azureDeleted) {
-//                 console.log('inside azuredeleted');
-//                 logger.info('Transaction update: receipt cleared', {...logDetails, transactionId:transactionId});
-//                 return res.status(200).json({ 
-//                     success: true, 
-//                     message: 'Transaction updated and receipt cleared successfully' 
-//                 });
-//             } else {
-//                 // DB updated, but Azure failed - still return 200 but with a warning message
-//                 logger.warn('Transaction updated but failed to remove file from storage', {...logDetails, transactionId:transactionId});
-//                 return res.status(200).json({ 
-//                     success: true, 
-//                     message: 'Transaction updated, but failed to remove file from storage' 
-//                 });
-//             }
-//         }
-
-//         logger.warn('Failed to update transaction record', {...logDetails, transactionId:transactionId})
-//         return res.status(400).json({ success: false, error: "Failed to update transaction record" });
-//     } catch (err) {
-//         logger.error('Critical issue while updating transactions', {...logDetails, error:err.message, stack:err.stack});
-//         return res.status(500).json({ success: false, error: err.message });
-//     }
-// }
 
 export async function updateTransactionController(req, res) {
     const logDetails = getLogContext(req, "TransactionService:UpdateTransaction");

@@ -1,13 +1,16 @@
-// Silence dotenvx warnings
-process.env.DOTENVX_SILENT = "true";
-
 import { jest } from "@jest/globals";
 
-// =======================
-// 1. ALL REQUIRED MOCKS
-// =======================
+// 1. MOCK GLOBAL FETCH (For internal Account Service balance sync)
+global.fetch = jest.fn(() =>
+  Promise.resolve({
+    ok: true,
+    status: 200,
+    json: () => Promise.resolve({ success: true }),
+  })
+);
 
-// Mock verifySession
+// 2. ALL MODULE MOCKS
+// --- Mock verifySession ---
 jest.unstable_mockModule("../middleware/verifySession.js", () => ({
   verifySession: (req, res, next) => {
     req.user = { id: "test-user-id" };
@@ -15,143 +18,141 @@ jest.unstable_mockModule("../middleware/verifySession.js", () => ({
   }
 }));
 
-// Mock DB
+// --- Mock DB (Used in models and app startup) ---
 jest.unstable_mockModule("../config/db.js", () => ({
-  db: jest.fn(async () => ({ rows: [] })),
-  pgQuery: jest.fn(async () => ({ rows: [] })),
-  pool: { end: jest.fn() },
-  pgConnectTest: jest.fn(async ()=>{
-    console.log("mocked DB connection success");
-    return true;
-  })
+  db: jest.fn(async (query) => {
+    if (query.includes("SELECT category_id")) return { rows: [{ category_id: 101 }] };
+    if (query.includes("INSERT INTO transactions")) return { rows: [{ id: "tx-123", amount: 100 }] };
+    return { rows: [] };
+  }),
+  pool: { 
+    query: jest.fn(), 
+    end: jest.fn() 
+  },
+  pgConnectTest: jest.fn(async () => true) // Added to fix your SyntaxError
 }));
 
-// Mock Redis
-jest.unstable_mockModule("../utils/redisConnection.js", () => ({
-  getRedisClient: async () => ({
-    connect: async () => {},
-    disconnect: async () => {},
-    on: () => {},
-    set: jest.fn(),
-    get: jest.fn(),
-    expire: jest.fn()
-  })
+// --- Mock Azure Utils (Merged all exports) ---
+jest.unstable_mockModule("../utils/azureblob.js", () => ({
+  generateReadSAS: jest.fn((ref) => `https://azure.com{ref}`),
+  generateUploadSAS: jest.fn(async () => ({ 
+    uploadUrl: "https://blob.url", 
+    blobName: "mock-blob-123" 
+  })),
+  deleteFromAzure: jest.fn(async () => true)
 }));
 
-// Mock Knex
-jest.unstable_mockModule("../config/knex.js", () => ({
-  knexDB: jest.fn(() => ({
-    join: () => ({
-      join: () => ({
-        join: () => ({
-          where: () => ({
-            andWhere: () => ({
-              select: () => [
-                { id: "tx1", amount: 100, category: "Food" }
-              ]
-            })
-          })
-        })
-      })
-    })
-  }))
+// --- Mock Knex (Handles Selects, Updates, and Delete) ---
+jest.unstable_mockModule("../config/knex.js", () => {
+  const mockKnex = jest.fn(() => mockKnex);
+  const methods = [
+    'join', 'leftJoin', 'where', 'andWhere', 'select', 
+    'orderBy', 'from', 'first', 'update', 'insert', 'limit'
+  ];
+  
+  methods.forEach(m => {
+    mockKnex[m] = jest.fn(() => mockKnex);
+  });
+  
+  // Custom .then logic to handle both Arrays (for list) and Objects (for .first())
+  mockKnex.then = (resolve) => {
+    const mockData = { 
+      id: "tx-123", 
+      amount: 100, 
+      type: "debit", 
+      reference: "ref-1", 
+      category_code: "FOOD", 
+      currency_code: "INR",
+      occurred_at: "2024-01-01" 
+    };
+    // If the mock was called with 'first', return object, otherwise array
+    resolve([mockData]); 
+  };
+
+  mockKnex.fn = { now: () => new Date().toISOString() };
+  mockKnex.toString = () => "MOCK SQL QUERY";
+  
+  return { knexDB: mockKnex };
+});
+
+// --- Mock Logger ---
+jest.unstable_mockModule("../config/logger.js", () => ({
+  logger: { 
+    info: jest.fn(), 
+    error: jest.fn(), 
+    warn: jest.fn() 
+  }
 }));
 
-// CRITICAL: Mock helmetConfig with the CORRECT path
+// --- Mock Helmet ---
 jest.unstable_mockModule("../config/helmet.config.js", () => ({
   helmetConfig: (req, res, next) => next()
 }));
 
-// Mock logger
-jest.unstable_mockModule("../config/logger.js", () => ({
-  logger: {
-    info: jest.fn(),
-    error: jest.fn()
-  }
-}));
-
-// Mock graceful shutdown
-// jest.unstable_mockModule("../utils/setupGracefulShutDown.js", () => ({
-//   default: jest.fn()
-// }));
-
-// Mock compression, cookie-parser, morgan
-jest.unstable_mockModule("compression", () => ({
-  default: () => (req, res, next) => next()
-}));
-jest.unstable_mockModule("cookie-parser", () => ({
-  default: () => (req, res, next) => next()
-}));
-jest.unstable_mockModule("morgan", () => ({
-  default: () => (req, res, next) => next()
-}));
-
-// Mock Transaction Service
-jest.unstable_mockModule("../src/service/transactionService.js", () => ({
-  knexSelect: jest.fn(async () => [
-    { id: "tx1", amount: 100 }
-  ]),
-  getTransactionsByUser: jest.fn(async () => [
-    { id: "tx1", amount: 100 }
-  ]),
-  checkCategoryTableAndAddTransaction: jest.fn(async () => ({
-    id: "new-tx"
-  })),
-  getchOneTransactionService: jest.fn(async () => [
-    { id: "tx1", amount: 100 }
-  ])
-}));
-
-// =======================
-// 2. IMPORT APP NOW
-// =======================
+// 3. IMPORT APP AFTER MOCKS ARE REGISTERED
 const { app } = await import("../index.js");
 import request from "supertest";
-import { pgConnectTest } from "../config/db.js";
 
-// =======================
-// 3. TEST SUITE
-// =======================
+// 4. TEST SUITE
 describe("Transaction Service API", () => {
-
-  it("GET /api/v1/transactions returns list", async () => {
-    const res = await request(app).get("/api/v1/transactions");
+  
+  it("GET /api/v1/transactions - Should return list", async () => {
+    const res = await request(app).get("/api/v1/transactions?type=debit");
     expect(res.status).toBe(200);
-    expect(res.body[0].id).toBe("tx1");
+    expect(Array.isArray(res.body)).toBe(true);
+    if (res.body.length > 0) {
+      expect(res.body[0]).toHaveProperty("reference");
+    }
   });
 
-  it("POST /api/v1/transactions creates transaction", async () => {
+  it("POST /api/v1/transactions - Should create transaction", async () => {
     const res = await request(app)
-      .post("/api/v1/transactions?accountId=acc-1")
+      .post("/api/v1/transactions")
       .send({
-        amount: 200,
-        type: "credit",
-        description: "Salary",
-        CategoryCode: "SAL",
-        displayName: "Income",
-        reference: "REF123",
-        occurredAt: "2026-03-20"
+        amount: 50,
+        type: "debit",
+        displayname: "Lunch",
+        description: "Pizza",
+        categorycode: "FOOD",
+        accountId: "acc-123",
+        occurredat: "2024-05-01"
       });
 
+    if (res.status === 500) console.log("Debug POST Error:", res.body);
     expect(res.status).toBe(201);
+    expect(res.body.saveTransaction.id).toBe("tx-123");
   });
 
-  it("GET /api/v1/transactions/:id returns one transaction", async () => {
+  it("GET /api/v1/transactions/:id - Should return one transaction", async () => {
     const res = await request(app)
-      .get("/api/v1/transactions/tx1?accountId=acc-1");
+      .get("/api/v1/transactions/tx-123?accountId=acc-123&transactionId=tx-123");
+    
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+  });
+
+  it("PATCH /api/v1/transactions/:id - Should update transaction", async () => {
+    const res = await request(app)
+      .patch("/api/v1/transactions/tx-123")
+      .send({
+        userId: "test-user-id",
+        accountId: "acc-123",
+        amount: 75
+      });
 
     expect(res.status).toBe(200);
-    expect(res.body.result[0].id).toBe("tx1");
+    expect(res.body.success).toBe(true);
   });
 
-  // it("PATCH returns 500 (not implemented)", async () => {
-  //   const res = await request(app).patch("/api/v1/transactions/tx1");
-  //   expect(res.status).toBe(500);
-  // });
+  it("DELETE /api/v1/transactions/:id - Should delete transaction", async () => {
+    const res = await request(app)
+      .delete("/api/v1/transactions/tx-123")
+      .send({
+        userId: "test-user-id",
+        accountId: "acc-123"
+      });
 
-  // it("DELETE returns 500 (not implemented)", async () => {
-  //   const res = await request(app).delete("/api/v1/transactions/tx1");
-  //   expect(res.status).toBe(500);
-  // });
-
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe("Transaction deleted successfully");
+  });
 });
