@@ -115,7 +115,7 @@ export async function addTransactionController(req, res){
     const logDetails = getLogContext(req, "TransactionService:addTransaction");
     try{
         const userId = req.user.id;
-        const { amount, type, displayname, description, reference, occurredat, categorycode, accountId} = req.body;
+        const { amount, type, displayname, description, reference, occurredat, categorycode, accountId, isPayable} = req.body;
         //note: Date order is yyyy-mm-dd in db
 
         console.log('Value of accountId, amount, type, description, reference, occuredat, categorycode, displayName:\n', accountId, amount, type, description, reference, categorycode, displayname);
@@ -137,7 +137,7 @@ export async function addTransactionController(req, res){
             logger.warn('Invalid transaction receipt format', logDetails);
             return res.status(400).json({success:false, error:"Invalid picture format"});
         }
-        const saveTransaction = await checkCategoryTableAndAddTransaction( userId, type, displayname, amount, accountId, description, reference,  categorycode, occurredat);
+        const saveTransaction = await checkCategoryTableAndAddTransaction( userId, type, displayname, amount, accountId, description, reference,  categorycode, occurredat, isPayable);
 
         if(saveTransaction){
             const adjustment = type==='debit'?-amount:amount;
@@ -273,14 +273,16 @@ export async function updateTransactionController(req, res) {
     const logDetails = getLogContext(req, "TransactionService:UpdateTransaction");
     try {
         const { transactionId } = req.params;
-        const { userId, accountId, ...updateData } = req.body;
+        const {  accountId, ...updateData } = req.body;
+        const userId = req.user.id;
+        
         
         const existing = await getchOneTransactionService(accountId, userId, transactionId);
         if (!existing) {
             return res.status(404).json({ success: false, error: "Not found" });
         }
 
-        const dbUpdate = await updateTransactionService(accountId, userId, transactionId, updateData);
+        const dbUpdate = await updateTransactionService(accountId,userId, transactionId, updateData);
 
         if (dbUpdate) {
             // --- NEW: BALANCE ADJUSTMENT LOGIC ---
@@ -329,4 +331,8 @@ export async function updateTransactionController(req, res) {
         logger.error('Critical issue while updating:', { ...logDetails, error: err.message });
         return res.status(500).json({ success: false, error: err.message });
     }
+}
+
+export async function addBulkTransactions(){
+    
 }

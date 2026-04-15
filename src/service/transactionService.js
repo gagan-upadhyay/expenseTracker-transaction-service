@@ -65,11 +65,12 @@ export async function getchOneTransactionService(accountId, userId, transactionI
         .select(
             't.amount',
             't.type',
-             't.display_name' ,
+            't.display_name' ,
             't.description',
             't.reference',
             't.occurred_at',
-            't.category_id'
+            't.category_id',
+            't.is_payable',
         )
         .where('t.id', transactionId)
         .andWhere('t.user_id', userId)
@@ -118,7 +119,7 @@ export async function createTable() {
 }
 
 
-export async function checkCategoryTableAndAddTransaction( userId, type, displayName, amount, accountId, description, reference, categorycode, occurredat) {
+export async function checkCategoryTableAndAddTransaction( userId, type, displayName, amount, accountId, description, reference, categorycode, occurredat, isPayable) {
     try{
         //checking if there is a category already:
         let categoryId;
@@ -143,12 +144,12 @@ export async function checkCategoryTableAndAddTransaction( userId, type, display
 
             //adding transaction:
             const insertTransactionQuery = `
-            INSERT INTO transactions(user_id, account_id, category_id, amount, type, description, reference, occurred_at, display_name)
-            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            INSERT INTO transactions(user_id, account_id, category_id, amount, type, description, reference, occurred_at, display_name, is_payable)
+            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
             RETURNING *
             `;
         console.log('Value of userId, accountId, categoryId, amount, type, description, reference, occuredAt from transactionServices:\n', userId, accountId, categoryId, amount, type, description, reference, occurredat);
-        const result = await db(insertTransactionQuery, [userId, accountId, categoryId, amount, type, description, reference, occurredat, displayName]);
+        const result = await db(insertTransactionQuery, [userId, accountId, categoryId, amount, type, description, reference, occurredat, displayName, isPayable]);
 
         // console.log('Value of result from transactinoService while saving a transaction:\n', result);
         if(result.rows.length!==0){
