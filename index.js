@@ -8,9 +8,11 @@ import transactionRouter from './src/routes/transactionServiceRouter.js';
 import { logger } from './config/logger.js';
 import setupGracefulShutDown from './utils/setupGracefulShutdown.js';
 import { pool } from './config/db.js';
-// import { knexDB } from './config/knex.js';
 import { helmetConfig } from './config/helmet.config.js';
 import { setupHealthCheckUp } from './utils/setupHealthCheckup.js';
+// import { startOutboxPublisher } from './workers/outboxPublisher.js';
+import { producer } from './config/kafka.js';
+import { consumer } from '../expenseTracker-account-service/config/kafka.js';
 
 const app = express();
 const corsOptions={
@@ -49,6 +51,9 @@ app.use(morgan(morganFormat,{
 // healthcheckup
 setupHealthCheckUp(app);
 
+//kafka outbox publisher
+// startOutboxPublisher();
+
 
 //midddleware
 //application level error catcher:
@@ -71,11 +76,14 @@ let server = null
 if(process.env.NODE_ENV!=="test"){
      server = app.listen(process.env.PORT || 5002, "0.0.0.0", () => {
         logger.info(`Transaction service running on ${process.env.PORT}`);
+        
     });
 
     setupGracefulShutDown(server, [
         async()=>await getRedisClient.disconnect(),
-        async()=>await pool.end()
+        async()=>await pool.end(),
+        async()=> await producer.disconnect(),
+        async()=> await consumer.disconnect(),
     ]);
 }
 export {app, server};

@@ -30,7 +30,7 @@ export async function getExchangeRates() {
 }
 
 export function convertValue(amount, from, to, rates) {
-  console.log('Value of amount, from to and rates:', amount, typeof(amount),from, typeof(from), to, typeof(to), rates, typeof(rates));
+  // console.log('Value of amount, from to and rates:', amount, typeof(amount),from, typeof(from), to, typeof(to), rates, typeof(rates));
     if ((from).toLowerCase() === (to).toLowerCase()) return Number(amount);
     // (Amount / Rate of From) * Rate of To
     const usdValue = amount / rates[from];

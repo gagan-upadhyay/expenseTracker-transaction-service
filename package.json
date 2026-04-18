@@ -13,7 +13,8 @@
   "scripts": {
     "test": "cross-env NODE_ENV=test node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand --detectOpenHandles",
     "dev": "nodemon start",
-    "start": "node index.js"
+    "start": "node index.js",
+    "worker": "nodemon workers/startOutbox-Worker.js"
   },
   "dependencies": {
     "@azure/storage-blob": "^12.31.0",
@@ -25,6 +26,7 @@
     "express": "^5.1.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
+    "kafkajs": "^2.2.4",
     "knex": "^3.1.0",
     "morgan": "^1.10.1",
     "pg": "^8.16.3",

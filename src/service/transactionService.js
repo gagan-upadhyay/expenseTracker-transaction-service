@@ -2,9 +2,9 @@
 import { db, pool } from "../../config/db.js";
 import { findByUserId, insert } from "../models/Transactions.js";
 import { logger } from "../../config/logger.js";
-import generateFakeTransactions from "../../utils/fakerTransactions.js";
+// import generateFakeTransactions from "../../utils/fakerTransactions.js";
 import { knexDB } from "../../config/knex.js";
-// import {v4 as uuidv4} from 'uuid';
+import crypto from 'crypto';
 
 
 //fetch transaction of a user
@@ -118,69 +118,205 @@ export async function createTable() {
     }
 }
 
+export async function checkCategoryTableAndAddTransaction(
+  userId,
+  type,
+  displayName,
+  amount,
+  accountId,
+  description,
+  newReference,
+  categorycode,
+  occurredat,
+  isPayable
+) {
+  const trx = await knexDB.transaction();
 
-export async function checkCategoryTableAndAddTransaction( userId, type, displayName, amount, accountId, description, reference, categorycode, occurredat, isPayable) {
-    try{
-        //checking if there is a category already:
-        let categoryId;
-        const isCategory = await db(
-            `
-            SELECT category_id FROM transaction_categories WHERE code=$1
-            `, [categorycode]);
+  try {
+    let categoryId;
 
-            if(isCategory.rows.length!==0) categoryId = isCategory.rows[0].category_id;
+    // ✅ check category
+    const existingCategory = await trx("transaction_categories")
+      .where({ code: categorycode })
+      .first();
 
-            if(isCategory.rows.length===0){
-                const query=`
-                INSERT INTO transaction_categories(code)
-                VALUES($1)
-                RETURNING category_id
-                `;
-                const insertCategoryCode = await db(query, [ categorycode]);
-                categoryId = insertCategoryCode.rows[0].category_id;
-            }
-            console.log('Value of category_id:', categoryId);
-//---------------------------transaction_category id generated----------------
+    if (existingCategory) {
+      categoryId = existingCategory.category_id;
+    } else {
+      const [newCategory] = await trx("transaction_categories")
+        .insert({ code: categorycode })
+        .returning("*");
 
-            //adding transaction:
-            const insertTransactionQuery = `
-            INSERT INTO transactions(user_id, account_id, category_id, amount, type, description, reference, occurred_at, display_name, is_payable)
-            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-            RETURNING *
-            `;
-        console.log('Value of userId, accountId, categoryId, amount, type, description, reference, occuredAt from transactionServices:\n', userId, accountId, categoryId, amount, type, description, reference, occurredat);
-        const result = await db(insertTransactionQuery, [userId, accountId, categoryId, amount, type, description, reference, occurredat, displayName, isPayable]);
-
-        // console.log('Value of result from transactinoService while saving a transaction:\n', result);
-        if(result.rows.length!==0){
-            return result.rows[0];
-        }
-        return result;
-            
-    }catch(err){
-        logger.error('Error while checking for category', err);
-        throw new Error(err);
+      categoryId = newCategory.category_id;
     }
+
+    // ✅ insert transaction
+    const [transaction] = await trx("transactions")
+      .insert({
+        user_id: userId,
+        account_id: accountId,
+        category_id: categoryId,
+        amount,
+        type,
+        description,
+        reference: newReference,
+        occurred_at: occurredat,
+        display_name: displayName,
+        is_payable: isPayable,
+      })
+      .returning("*");
+
+    // ✅ FULL EVENT PAYLOAD (IMPORTANT)
+    const eventPayload = {
+      eventId: crypto.randomUUID(),
+      eventType: "transaction.created",
+      timestamp: new Date().toISOString(),
+      data: {
+        transactionId: transaction.id,
+        userId,
+        accountId,
+        amount,
+        type,
+        categorycode,
+        occurredat,
+        isPayable,
+      },
+    };
+
+    // ✅ INSERT INTO OUTBOX (NO stringify)
+    await trx("outbox_events").insert({
+      event_type: "transaction.created",
+      payload: eventPayload,
+      status: "PENDING",
+    });
+
+    await trx.commit();
+
+    return transaction;
+  } catch (err) {
+    await trx.rollback();
+    throw err;
+  }
 }
 
-export async function deleteTransactionService(accountId, userId, transactionId) {
-    return knexDB('transactions')
-        .where('id', transactionId)
-        .andWhere('user_id', userId)
-        .andWhere('account_id', accountId)
-        .update({
-            is_active: false,
-            deleted_at: knexDB.fn.now() // Optional: track when it was deleted
-        });
+
+export async function deleteTransactionService(accountId, userId, transactionId, amount, type) {
+    const trx = await knexDB.transaction();
+
+    try {
+        const result = await trx('transactions')
+            .where({
+                id: transactionId,
+                user_id: userId,
+                account_id: accountId
+            })
+            .update({
+                is_active: false,
+                deleted_at: trx.fn.now()
+            })
+            .returning('*');
+            
+            await knexDB("outbox_events").insert({
+                event_type: "transaction.deleted",
+                payload: {
+                    eventId: crypto.randomUUID(),
+                    eventType: "transaction.deleted",
+                    timestamp: new Date().toISOString(),
+                    data: {
+                    transactionId,
+                    userId,
+                    accountId,
+                    amount: amount,
+                    type: type,
+                    },
+                },
+                status: "PENDING",
+            });
+
+
+        await trx.commit();
+        return result[0];
+
+    } catch (err) {
+        await trx.rollback();
+        throw err;
+    }
 }
 
 
 // transactionService.js
-export async function updateTransactionService(accountId, userId, transactionId, updateData) {
-    return knexDB('transactions')
-        .where({ id: transactionId, user_id: userId, account_id: accountId })
+export async function updateTransactionService(
+    accountId, 
+    userId, 
+    transactionId, 
+    updatePayload,
+    existing
+) {
+    const trx = await knexDB.transaction();
+    try{
+        const result = await trx('transactions')
+        .where({
+            id:transactionId,
+            user_id:userId,
+            account_id:accountId
+        })
         .update({
-            ...updateData,
-            updated_at: knexDB.fn.now()
+            ...updatePayload,
+            updated_at:trx.fn.now()
+        })
+        .returning('*');
+
+        await trx("outbox_events").insert({
+            event_type: "transaction.updated",
+            payload: {
+                eventId: crypto.randomUUID(),
+                eventType: "transaction.updated",
+                timestamp: new Date().toISOString(),
+                data: {
+                transactionId,
+                userId,
+                accountId,
+                old: {
+                    amount: existing.amount,
+                    type: existing.type,
+                },
+                updated: {
+                    amount: updatePayload.amount ?? existing.amount,
+                    type: updatePayload.type ?? existing.type,
+                },
+                },
+            },
+            status: "PENDING",
         });
+        await trx.commit();
+        return result[0];
+
+    }catch(err){
+        await trx.rollback();
+        throw err;
+    }
+}
+
+// export async function getCategoryId(category_code) {
+//     const query=`SELECT category_id FROM transaction_categories WHERE code=$1`;
+//     const result = await db(query, [category_code]);
+//   if (!result) {
+//     throw new Error(`Invalid category_code: ${category_code}`);
+//   }
+//     if(result.rows.length!==0){
+//         return result.rows[0].category_id;
+//     }
+//     return result;
+// }
+
+export async function getCategoryId(category_code){
+    const trx = await knexDB.transaction();
+    try{
+        const result = await trx('transaction_categories')
+        .where({code:category_code})
+        .select('transaction_categories.category_id')
+    }catch(err){
+        await trx.rollback();
+        throw err;
+    }
 }
