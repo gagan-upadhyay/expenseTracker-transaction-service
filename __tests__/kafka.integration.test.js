@@ -2,7 +2,7 @@ import { jest } from "@jest/globals";
 import { startKafka, stopKafka } from "../test-utils/kafkaTest.js";
 import { startTestDB, stopTestDB } from "../test-utils/testDB.js";
 
-jest.setTimeout(90000);
+jest.setTimeout(120000);
 
 let db;
 let producer;
