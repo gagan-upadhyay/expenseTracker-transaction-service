@@ -14,29 +14,38 @@ async function startKafkaWithRetry(retries = 3) {
       const c = await new KafkaContainer("confluentinc/cp-kafka:7.4.0")
         .withKraft()
         .withEnvironment({
-          KAFKA_HEAP_OPTS: "-Xmx512m -Xms256m",                      // ✅ Cap JVM memory
-          KAFKA_JVM_PERFORMANCE_OPTS: "-client -XX:+UseG1GC",         // ✅ Lighter GC for CI
+          KAFKA_HEAP_OPTS: "-Xmx512m -Xms256m",
+          KAFKA_JVM_PERFORMANCE_OPTS: "-client -XX:+UseG1GC",
         })
-        .withStartupTimeout(120000)                                    // ✅ Give 2 min to start
+        .withStartupTimeout(120000)
         .start();
 
       console.log(`[Kafka] Container started on attempt ${attempt}`);
       return c;
     } catch (err) {
       console.error(`[Kafka] Attempt ${attempt} failed: ${err.message}`);
-
-      // ✅ Print container logs so we can see WHY it crashed in GHA
-      if (err.container) {
-        try {
-          const logs = await err.container.logs();
-          console.error("[Kafka] Container logs:\n", logs);
-        } catch (logErr) {
-          console.error("[Kafka] Could not fetch container logs:", logErr.message);
-        }
-      }
-
       if (attempt === retries) throw err;
       await new Promise((r) => setTimeout(r, 8000));
+    }
+  }
+}
+
+// ✅ Wait until Kafka broker is actually reachable before proceeding
+async function waitForKafkaReady(kafka, retries = 20, intervalMs = 3000) {
+  const admin = kafka.admin();
+  for (let i = 1; i <= retries; i++) {
+    try {
+      console.log(`[Kafka] Checking broker readiness (${i}/${retries})...`);
+      await admin.connect();
+      await admin.listTopics();   // lightweight probe — succeeds only when broker is up
+      await admin.disconnect();
+      console.log(`[Kafka] Broker is ready`);
+      return;
+    } catch (err) {
+      console.warn(`[Kafka] Not ready yet: ${err.message}`);
+      try { await admin.disconnect(); } catch (_) {}
+      if (i === retries) throw new Error(`Kafka broker not ready after ${retries} attempts`);
+      await new Promise((r) => setTimeout(r, intervalMs));
     }
   }
 }
@@ -60,6 +69,9 @@ export async function startKafka() {
       retries: 10,
     },
   });
+
+  // ✅ Wait until broker is actually accepting connections before doing anything
+  await waitForKafkaReady(kafka);
 
   producer = kafka.producer();
   consumer = kafka.consumer({ groupId: "test-group" });
