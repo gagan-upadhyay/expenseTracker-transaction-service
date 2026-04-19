@@ -38,8 +38,30 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
+      # ✅ Fix Docker socket permissions for Testcontainers
+      - name: Configure Docker for Testcontainers
+        run: |
+          sudo systemctl start docker
+          sudo chmod 666 /var/run/docker.sock
+          docker info                         # prints Docker engine info — useful for debugging
+          docker pull confluentinc/cp-kafka:7.4.0   # pre-pull so startup timeout isn't wasted on download
+
       - name: Run Tests
         run: npm test
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: "true"
+          DOCKER_HOST: unix:///var/run/docker.sock
+          TESTCONTAINERS_CHECKS_DISABLE: "true"
+          KAFKA_HEAP_OPTS: "-Xmx512m -Xms256m"
+
+      # ✅ On failure: dump all Docker container logs so we can see crash reason
+      - name: Dump Docker logs on failure
+        if: failure()
+        run: |
+          echo "=== All containers ===" && docker ps -a
+          for id in $(docker ps -aq); do
+            echo "=== Logs for $id ===" && docker logs $id 2>&1 || true
+          done
 
       # =========================
       # 5. Build Docker Image
@@ -62,7 +84,7 @@ jobs:
           docker push ${{ secrets.DOCKER_USERNAME }}/transaction-service:latest
 
       # =========================
-      # 8. Trigger Deploy Repo 
+      # 8. Trigger Deploy Repo
       # =========================
       - name: Trigger Deployment
         run: |
