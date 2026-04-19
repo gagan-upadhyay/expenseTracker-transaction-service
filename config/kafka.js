@@ -38,6 +38,16 @@ export const createConsumer = (groupId, options = {}) =>
     heartbeatInterval: options.heartbeatInterval || 3000,
   });
 
+export const consumer = kafka.consumer({
+  groupId:'Transaction-service-consumer-v1',
+  sessionTimeout:60000,
+  heartbeatInterval:3000,
+  retry:{
+    retries:10
+  },
+  allowAutoTopicCreation:false,
+})
+
 export const TOPICS = {
     MAIN: "transactions.v1",
     RETRY: "transactions.retry",
