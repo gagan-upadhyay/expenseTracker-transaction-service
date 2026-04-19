@@ -16,6 +16,7 @@ describe("Kafka Integration (Outbox Flow)", () => {
     const kafkaSetup = await startKafka();
     producer = kafkaSetup.producer;
     consumer = kafkaSetup.consumer;
+    await new Promise(r => setTimeout(r, 8000));
 
     // ✅ MOCK BEFORE IMPORT (IMPORTANT)
     jest.unstable_mockModule("../config/kafka.js", () => ({
@@ -59,7 +60,7 @@ describe("Kafka Integration (Outbox Flow)", () => {
     });
 
     // wait for consumer readiness
-    await new Promise((r) => setTimeout(r, 2000));
+    await new Promise((r) => setTimeout(r, 8000));
 
     await db("outbox_events").insert({
       event_type: "transaction.created",
