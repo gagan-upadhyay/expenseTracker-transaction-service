@@ -4,13 +4,13 @@ import { jest } from "@jest/globals";
 
 const mockTransaction = jest.fn();
 
-jest.unstable_mockModule("../../../config/knex.js", () => ({
+jest.unstable_mockModule("../config/knex.js", () => ({
   knexDB: {
     transaction: mockTransaction,
   },
 }));
 
-const service = await import("../transactionService.js");
+const service = await import("../src/service/transactionService.js");
 
 /* ================= HELPER: CREATE TRX MOCK ================= */
 
