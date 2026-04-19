@@ -2,5 +2,8 @@ export default {
   testEnvironment: "node",
   transform: {},
   setupFilesAfterEnv: ["./jest.setup.js"],
-  testTimeout:30000,
+  // globalTeardown: "./jest.teardown.js",
+  // moduleNameMapper: {
+  //   "^(\\.{1,2}/.*)\\.js$": "$1"  // Fix ESM imports
+  // }
 };
