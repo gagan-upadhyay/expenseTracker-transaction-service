@@ -1,6 +1,6 @@
 import { Kafka } from "kafkajs";
 import { KafkaContainer } from "@testcontainers/kafka";
-// import { Wait } from "testcontainers";
+import { Wait } from "testcontainers";
 
 let container;
 let kafka;
