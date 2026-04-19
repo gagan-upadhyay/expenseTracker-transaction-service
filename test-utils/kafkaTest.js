@@ -1,6 +1,6 @@
 import { Kafka } from "kafkajs";
 import { KafkaContainer } from "@testcontainers/kafka";
-import { Wait } from "testcontainers";
+// import { Wait } from "testcontainers";
 
 let container;
 let kafka;
@@ -10,6 +10,7 @@ let consumer;
 export async function startKafka() {
   // ✅ Start Kafka container (Testcontainers handles config)
   container = await new KafkaContainer()
+    .withExposedPorts(9093)
     .waitingFor(Wait.forLogMessage(/.*Ready to accept connections.*/))
     .start();
 
