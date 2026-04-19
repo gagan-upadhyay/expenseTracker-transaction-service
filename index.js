@@ -10,9 +10,8 @@ import setupGracefulShutDown from './utils/setupGracefulShutdown.js';
 import { pool } from './config/db.js';
 import { helmetConfig } from './config/helmet.config.js';
 import { setupHealthCheckUp } from './utils/setupHealthCheckup.js';
-import { producer,  } from './config/kafka.js';
-// import { consumer } from '../expenseTracker-account-service/config/kafka.js';
-
+import { producer } from './config/kafka.js';
+import { consumer } from '../expenseTracker-account-service/config/kafka.js';
 
 const app = express();
 const corsOptions={
