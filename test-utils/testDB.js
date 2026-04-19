@@ -70,11 +70,25 @@ export async function startTestDB() {
   });
 
   await db.schema.createTable("outbox_events", (t) => {
-    t.increments("id");
+    t.increments("id").primary();
     t.string("event_type");
     t.jsonb("payload");
-    t.string("status");
+    t.string("status").defaultTo("PENDING");
+    t.timestamp("next_retry_at").nullable();
+    t.integer("retry_count").defaultTo(0);
+    t.text("last_error").nullable();
+
+    t.timestamp("created_at").defaultTo(db.fn.now());
+    t.timestamp("updated_at").defaultTo(db.fn.now());
+
   });
+await db.schema.createTable("dlq_events", (t) => {
+  t.increments("id").primary();
+  t.integer("original_event_id");
+  t.jsonb("payload");
+  t.text("error");
+  t.timestamp("created_at").defaultTo(db.fn.now());
+});
 
   return db;
 }

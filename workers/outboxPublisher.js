@@ -179,3 +179,104 @@ export const startOutboxPublisher = async () => {
     await sleep(POLL_INTERVAL);
   }
 };
+
+// export async function processOutboxBatch(knexDB, producer) {
+//   const events = await knexDB("outbox_events")
+//     .where("status", "PENDING")
+//     .whereNotNull("next_retry_at")
+//     .andWhere("next_retry_at", "<=", new Date())
+//     .limit(10);
+
+//   for (const event of events) {
+//     try {
+//       const payload =
+//         typeof event.payload === "string"
+//           ? JSON.parse(event.payload)
+//           : event.payload;
+
+//       await producer.send({
+//         topic: "transactions.v1",
+//         messages: [
+//           {
+//             key: payload.userId || "unknown",
+//             value: JSON.stringify({
+//               eventId: event.id,
+//               eventType: event.event_type,
+//               timestamp: new Date().toISOString(),
+//               data: payload,
+//             }),
+//           },
+//         ],
+//       });
+
+//       await knexDB("outbox_events")
+//         .where({ id: event.id })
+//         .update({
+//           status: "SENT",
+//           last_error: null,
+//         });
+
+//     } catch (err) {
+//       const retryCount = (event.retry_count || 0) + 1;
+
+//       if (retryCount >= MAX_RETRIES) {
+//         await knexDB("dlq_events").insert({
+//           original_event_id: event.id,
+//           payload: event.payload,
+//           error: err.message,
+//         });
+
+//         await knexDB("outbox_events")
+//           .where({ id: event.id })
+//           .update({
+//             status: "FAILED",
+//             retry_count: retryCount,
+//             last_error: err.message,
+//           });
+
+//       } else {
+//         await knexDB("outbox_events")
+//           .where({ id: event.id })
+//           .update({
+//             retry_count: retryCount,
+//             last_error: err.message,
+//             next_retry_at: getNextRetryTime(retryCount),
+//           });
+//       }
+//     }
+//   }
+// }
+
+// ✅ TESTABLE SINGLE RUN (NO WHILE LOOP)
+export const processOutboxBatch = async (knexDB) => {
+  const events = await knexDB("outbox_events")
+    .where("status", "PENDING")
+    .where("next_retry_at", "<=", new Date())
+    .limit(10);
+
+  for (const event of events) {
+    const payload =
+      typeof event.payload === "string"
+        ? JSON.parse(event.payload)
+        : event.payload;
+
+    await producer.send({
+      topic: "transactions.v1",
+      messages: [
+        {
+          key: payload.userId || "unknown",
+          value: JSON.stringify({
+            eventId: event.id,
+            eventType: event.event_type,
+            timestamp: new Date().toISOString(),
+            data: payload,
+          }),
+        },
+      ],
+    });
+
+    await knexDB("outbox_events")
+      .where({ id: event.id })
+      .update({ status: "SENT" });
+  }
+};

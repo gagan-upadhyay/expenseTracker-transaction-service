@@ -14,12 +14,21 @@
     "test": "cross-env NODE_ENV=test node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand --detectOpenHandles --coverage",
     "dev": "nodemon start",
     "start": "node index.js",
-    "worker": "nodemon workers/startOutbox-Worker.js"
+    "worker": "nodemon workers/startOutbox-Worker.js",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{js,ts}": [
+      "eslint --fix",
+      "git add",
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "@azure/storage-blob": "^12.31.0",
     "@dotenvx/dotenvx": "^1.48.4",
     "@faker-js/faker": "^9.9.0",
+    "@testcontainers/kafka": "^10.28.0",
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -36,10 +45,14 @@
     "winston": "^3.17.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "cross-env": "^10.1.0",
+    "eslint": "^10.2.1",
+    "globals": "^17.5.0",
     "jest": "^30.3.0",
     "nodemon": "^3.1.14",
+    "prettier": "^3.8.3",
     "supertest": "^7.2.2",
-    "testcontainers": "^11.14.0"
+    "testcontainers": "^10.28.0"
   }
 }

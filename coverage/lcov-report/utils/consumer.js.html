@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for config/db.js</title>
+    <title>Code coverage report for utils/consumer.js</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../prettify.css" />
     <link rel="stylesheet" href="../base.css" />
@@ -19,20 +19,20 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../index.html">All files</a> / <a href="index.html">config</a> db.js</h1>
+        <h1><a href="../index.html">All files</a> / <a href="index.html">utils</a> consumer.js</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">33.33% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>3/9</span>
+                <span class='fraction'>0/4</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">50% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>1/2</span>
+                <span class='fraction'>0/0</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">37.5% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>3/8</span>
+                <span class='fraction'>0/4</span>
             </div>
         
             
@@ -72,51 +72,24 @@
 <a name='L7'></a><a href='#L7'>7</a>
 <a name='L8'></a><a href='#L8'>8</a>
 <a name='L9'></a><a href='#L9'>9</a>
-<a name='L10'></a><a href='#L10'>10</a>
-<a name='L11'></a><a href='#L11'>11</a>
-<a name='L12'></a><a href='#L12'>12</a>
-<a name='L13'></a><a href='#L13'>13</a>
-<a name='L14'></a><a href='#L14'>14</a>
-<a name='L15'></a><a href='#L15'>15</a>
-<a name='L16'></a><a href='#L16'>16</a>
-<a name='L17'></a><a href='#L17'>17</a>
-<a name='L18'></a><a href='#L18'>18</a>
-<a name='L19'></a><a href='#L19'>19</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<a name='L10'></a><a href='#L10'>10</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import {Pool} from 'pg';
-import { logger } from './logger.js';
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">export async function <span class="fstat-no" title="function not covered" >startConsumer(</span>consumer, handler) {
+<span class="cstat-no" title="statement not covered" >  await consumer.subscribe({ topic: "transactions", fromBeginning: true });</span>
 &nbsp;
-export const pool = new Pool({
-    connectionString:process.env.POSTGRES_URL,
-    ssl:process.env.NODE_ENV==='production'?<span class="branch-0 cbranch-no" title="branch not covered" >{rejectUnauthorized:false}:</span>false,
-});
-&nbsp;
-export const db = <span class="fstat-no" title="function not covered" >(t</span>ext, params)=&gt;<span class="cstat-no" title="statement not covered" >pool.query(text, params);</span>
-&nbsp;
-export const pgConnectTest = <span class="fstat-no" title="function not covered" >as</span>ync()=&gt;{
-<span class="cstat-no" title="statement not covered" >    try{</span>
-<span class="cstat-no" title="statement not covered" >        await pool.connect();</span>
-        const result = <span class="cstat-no" title="statement not covered" >await pool.query(`SELECT NOW()`);</span>
-<span class="cstat-no" title="statement not covered" >        logger.info(`Postgres connected. Server time:${result.rows[0].now}`)</span>
-    }catch(err){
-<span class="cstat-no" title="statement not covered" >        logger.error('Error connecting postgres:', err);</span>
-    }
+<span class="cstat-no" title="statement not covered" >  await consumer.run({</span>
+    eachMessage: <span class="fstat-no" title="function not covered" >as</span>ync ({ message }) =&gt; {
+      const payload = <span class="cstat-no" title="statement not covered" >JSON.parse(message.value.toString());</span>
+<span class="cstat-no" title="statement not covered" >      await handler(payload);</span>
+    },
+  });
 }</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -124,7 +97,7 @@ export const pgConnectTest = <span class="fstat-no" title="function not covered"
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-19T11:28:44.169Z
+                at 2026-04-19T10:20:47.846Z
             </div>
         <script src="../prettify.js"></script>
         <script>
