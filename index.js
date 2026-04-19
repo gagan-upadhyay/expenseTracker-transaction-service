@@ -10,7 +10,6 @@ import setupGracefulShutDown from './utils/setupGracefulShutdown.js';
 import { pool } from './config/db.js';
 import { helmetConfig } from './config/helmet.config.js';
 import { setupHealthCheckUp } from './utils/setupHealthCheckup.js';
-// import { startOutboxPublisher } from './workers/outboxPublisher.js';
 import { producer } from './config/kafka.js';
 import { consumer } from '../expenseTracker-account-service/config/kafka.js';
 

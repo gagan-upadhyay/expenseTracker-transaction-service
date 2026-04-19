@@ -223,7 +223,7 @@ export async function fetchOnetransactionController(req, res){
     const userId = req.user.id;
     try{
         const result = await getchOneTransactionService(accountId, userId, transactionId);
-        if(result.length===0) return res.status(200).json({success:true, message:'No Transaction recorded.'})
+        if(!result) return res.status(200).json({success:true, message:'No Transaction recorded.'})
         logger.info("Fetched Transaction successfully", logDetails);
         return res.status(200).json({success:true, message:'Fetched sucessfully', result});
     }catch(err){
@@ -362,10 +362,9 @@ export async function updateTransactionController(req, res) {
 
         updatePayload.updated_at = new Date();
 
-        console.log('Bvalue of updatePayload:', updatePayload);
 
         const dbUpdate = await updateTransactionService(accountId, userId, transactionId, updatePayload, existing);
-        console.log("Value of dbUpdate:", dbUpdate);
+        
 
         if (dbUpdate) {
             // --- NEW: BALANCE ADJUSTMENT LOGIC ---

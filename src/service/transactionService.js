@@ -2,7 +2,6 @@
 import { db, pool } from "../../config/db.js";
 import { findByUserId, insert } from "../models/Transactions.js";
 import { logger } from "../../config/logger.js";
-// import generateFakeTransactions from "../../utils/fakerTransactions.js";
 import { knexDB } from "../../config/knex.js";
 import crypto from 'crypto';
 
@@ -79,25 +78,6 @@ export async function getchOneTransactionService(accountId, userId, transactionI
         .first(); // Returns the object directly instead of an array
 }
 
-
-//generate synthetic transaction for all user accounts
-
-
-// export async function generateTransactions(userId, count=10){
-//     const accountQuery=`
-//     SELECT id FROM accounts WHERE user_id=$1
-//     `;
-//     const {rows:accounts} = await db(accountQuery, [userId]);
-//     const inserted=[];
-//     for(const account of accounts){
-//         for(let i=0;i<count;i++){
-//             const tx = generateFakeTransactions(account.id);
-//             const result = await insert(tx);
-//             inserted.push(result);
-//         }
-//     }
-//     return inserted;
-// }
 
 // creating transaction table:
 export async function createTable() {
@@ -216,7 +196,7 @@ export async function deleteTransactionService(accountId, userId, transactionId,
             })
             .returning('*');
             
-            await knexDB("outbox_events").insert({
+            await trx("outbox_events").insert({
                 event_type: "transaction.deleted",
                 payload: {
                     eventId: crypto.randomUUID(),
@@ -297,24 +277,13 @@ export async function updateTransactionService(
     }
 }
 
-// export async function getCategoryId(category_code) {
-//     const query=`SELECT category_id FROM transaction_categories WHERE code=$1`;
-//     const result = await db(query, [category_code]);
-//   if (!result) {
-//     throw new Error(`Invalid category_code: ${category_code}`);
-//   }
-//     if(result.rows.length!==0){
-//         return result.rows[0].category_id;
-//     }
-//     return result;
-// }
-
 export async function getCategoryId(category_code){
     const trx = await knexDB.transaction();
     try{
         const result = await trx('transaction_categories')
         .where({code:category_code})
         .select('transaction_categories.category_id')
+        return result
     }catch(err){
         await trx.rollback();
         throw err;

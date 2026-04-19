@@ -1,4 +1,6 @@
-import {Kafka, logLevel, Partitioners} from "kafkajs";
+import {Kafka, 
+  Partitioners
+} from "kafkajs";
 
 const connectionString = process.env.KAFKA_CONNECTION_STRING;
 console.log("value of connection String:",connectionString);
@@ -19,7 +21,7 @@ const kafka = new Kafka({
     retries: Number.MAX_SAFE_INTEGER,
     initialRetryTime: 100,
   },
-  logLevel:logLevel.ERROR,
+  
 });
 
 export const producer = kafka.producer({
